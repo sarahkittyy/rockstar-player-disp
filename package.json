@@ -1,0 +1,21 @@
+{
+  "name": "rockstar-main",
+  "version": "1.0.0",
+  "description": "6 Server log, /report, /help, /role-react",
+  "main": "build/index.js",
+  "repository": "git@github.com:sarahkittyy/rockstar-main.git",
+  "author": "sarahkittyy <sarahohlin1@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^12.0.10",
+    "discord.js": "^11.5.1",
+    "gulp": "^4.0.2",
+    "gulp-typescript": "^5.0.1",
+    "nexe": "^3.3.2",
+    "typescript": "^3.5.2"
+  },
+  "scripts": {
+	"build": "gulp build",
+	"start": "yarn build && node build/index.js"
+  }
+}

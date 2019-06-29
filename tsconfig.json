@@ -1,0 +1,19 @@
+{
+	"exclude": [
+		"node_modules/"
+	],
+	"include": [
+		"src/**/*.ts"
+	],
+	"compilerOptions": {
+		"allowJs": true,
+		"target": "es5",
+		"outDir": "build",
+		"resolveJsonModule": true,
+		"allowSyntheticDefaultImports": true,
+		"alwaysStrict": true,
+		"noImplicitAny": true,
+		"esModuleInterop": true,
+		"moduleResolution": "node"
+	}
+}
