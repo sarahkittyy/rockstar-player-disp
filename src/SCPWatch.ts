@@ -78,12 +78,12 @@ export default class SCPWatch
 				// Get the log contents.
 				let logcontents: LogContent[] = contents.map((s: string) => this.splitLine(s))
 														.filter((c: LogContent) => !isNullOrUndefined(c));
-				if(!logcontents)
+				if(!logcontents || logcontents.length === 0)
 				{
 					return;
 				}
 				logcontents = logcontents.filter((c: LogContent) => c.date > this.date);
-				if(!logcontents)
+				if(!logcontents || logcontents.length === 0)
 				{
 					return;
 				}
