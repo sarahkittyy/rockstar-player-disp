@@ -44,7 +44,6 @@ export default class SCPWatch
 	{
 		this.settings = settings;
 		this.date = new Date();
-		this.playerCount = 0;
 		
 		// Find the guild.
 		let guild: Discord.Guild | undefined =
@@ -59,6 +58,17 @@ export default class SCPWatch
 		{
 			throw new Error('Fatal error? Client not a member of the guild with the specified ID? Contact the programmer.');
 		}
+		// Get the initial player count.
+		this.playerCount = this.getInitialPlayercount();
+		
+		console.log(`Initial player count: ${this.playerCount}.`);
+		
+		// Set the nickname.
+		this.client.setNickname(this.getNickname(this.playerCount))
+		.catch(console.error)
+		.then(()=>{
+			console.log('Log file updated, set name. Player count: ' + this.playerCount.toString());
+		});
 		
 		watch(this.settings.path + this.settings.port.toString(), {
 			recursive: true	
@@ -72,47 +82,9 @@ export default class SCPWatch
 			// Read the file.
 			fs.readFile(filename, (err, data) => {
 				if(err) throw err;
-				
-				// Every line of the log file.
-				let contents: string[] = data.toString().split('\n');
-				// Get the log contents.
-				let logcontents: LogContent[] = contents.map((s: string) => this.splitLine(s))
-														.filter((c: LogContent) => !isNullOrUndefined(c));
-				if(!logcontents || logcontents.length === 0)
-				{
-					return;
-				}
-				logcontents = logcontents.filter((c: LogContent) => c.date > this.date);
-				if(!logcontents || logcontents.length === 0)
-				{
-					return;
-				}
-				// Set the date to the highest of the new content dates.
-				this.date = logcontents.reduce((a, b) => a.date > b.date ? a : b ).date;
-				// Iterate over all viable new contents.
-				for(let content of logcontents)
-				{
-					// Check if it's a connection update / networking
-					if(content.event !== 'Connection update' || content.subevent !== 'Networking')
-					{
-						continue;
-					}
-					
-					// Events should have keyword 'player' and keywords 'connected' or 'disconnected'
-					if(!(/player/gi.test(content.data)))
-					{
-						continue;
-					}
-					
-					if(/\bconnected\b/gi.test(content.data))
-					{
-						this.playerCount++;
-					}
-					else if(/\bdisconnected\b/gi.test(content.data))
-					{
-						this.playerCount--;
-					}
-				}
+				// Handle the data from the file.
+				let change: number = this.handleFiledata(data.toString());
+				this.playerCount += change;
 				// Set the nickname.
 				this.client.setNickname(this.getNickname(this.playerCount))
 				.catch(console.error)
@@ -121,6 +93,81 @@ export default class SCPWatch
 				});
 			});
 		});
+	}
+	
+	/**
+	 * @brief Get the initial server player count.
+	 */
+	private getInitialPlayercount(): number
+	{
+		let dir: string = this.settings.path + this.settings.port.toString();
+		let playerCount: number = 0;
+		let files: string[] = fs.readdirSync(dir);
+		files.forEach((file: string) => {
+			let contents: string = fs.readFileSync(path.resolve(dir, file)).toString();
+			
+			playerCount += this.handleFiledata(contents, true);
+		});
+		return playerCount;
+	}
+	
+	/**
+	 * @brief Handle the data from an updated logfile.
+	 * 
+	 * @param data The updated file's data.
+	 * @param ignoreDate True to ignore dating and handle all lines.
+	 * 
+	 * @returns The change in player count
+	 */
+	private handleFiledata(data: string, ignoreDate: boolean = false): number
+	{
+		let pcount: number = 0;
+		
+		// Every line of the log file.
+		let contents: string[] = data.split('\n');
+		// Get the log contents.
+		let logcontents: LogContent[] = contents.map((s: string) => this.splitLine(s))
+												.filter((c: LogContent) => !isNullOrUndefined(c));
+		if(!logcontents || logcontents.length === 0)
+		{
+			return 0;
+		}
+		if(!ignoreDate)
+		{		
+			logcontents = logcontents.filter((c: LogContent) => c.date > this.date);
+			if(!logcontents || logcontents.length === 0)
+			{
+				return 0;
+			}
+			// Set the date to the highest of the new content dates.
+			this.date = logcontents.reduce((a, b) => a.date > b.date ? a : b ).date;
+		}
+		// Iterate over all viable new contents.
+		for(let content of logcontents)
+		{
+			// Check if it's a connection update / networking
+			if(content.event !== 'Connection update' || content.subevent !== 'Networking')
+			{
+				continue;
+			}
+			
+			// Events should have keyword 'player' and keywords 'connected' or 'disconnected'
+			if(!(/player/gi.test(content.data)))
+			{
+				continue;
+			}
+			
+			if(/\bconnected\b/gi.test(content.data))
+			{
+				pcount++;
+			}
+			else if(/\bdisconnected\b/gi.test(content.data))
+			{
+				pcount--;
+			}
+		}
+		
+		return pcount;
 	}
 	
 	/**
