@@ -1,5 +1,6 @@
 import * as Discord from 'discord.js';
 import Settings from './Settings';
+import SCPWatch from './SCPWatch';
 
 /**
  * Main discord bot class
@@ -12,6 +13,8 @@ export default class Bot
 	private token: string;
 	/// The bot client
 	private client: Discord.Client;
+	// The log watcher.
+	private watcher: SCPWatch;
 
 	/**
 	 * @brief Init the bot
@@ -38,8 +41,13 @@ export default class Bot
 			console.log('Trying to log in again...');
 			this.login();
 		});
-
-
+		
+		// Once the bot is ready...
+		this.client.on('ready', () => {
+			// Init the watcher.
+			this.watcher = new SCPWatch(settings, this.client);
+		});
+		
 		// Log the bot in.
 		this.login();
 	}
