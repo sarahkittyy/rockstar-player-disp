@@ -15,7 +15,8 @@
     "typescript": "^3.5.2"
   },
   "scripts": {
-	"build": "gulp build",
-	"start": "yarn build && node build/index.js"
+    "build": "gulp build",
+    "start": "yarn build && node build/index.js"
+	"dist": "yarn build && make"
   }
 }
