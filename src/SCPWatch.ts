@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import watch from 'node-watch';
 import * as path from 'path';
 import { String } from 'typescript-string-operations'; 
+import { isNullOrUndefined } from 'util';
 
 /**
  * @brief The content in a single line of the logs.
@@ -28,6 +29,10 @@ export default class SCPWatch
 	private settings: Settings;
 	/// The bot client, as a member of a guild.
 	private client: Discord.GuildMember;
+	/// The latest update date.
+	private date: Date;
+	/// The current count of players.
+	private playerCount: number;
 	
 	/**
 	 * @brief Init the watcher.
@@ -38,6 +43,8 @@ export default class SCPWatch
 	public constructor(settings: Settings, client: Discord.Client)
 	{
 		this.settings = settings;
+		this.date = new Date();
+		this.playerCount = 0;
 		
 		// Find the guild.
 		let guild: Discord.Guild | undefined =
@@ -66,19 +73,25 @@ export default class SCPWatch
 			fs.readFile(filename, (err, data) => {
 				if(err) throw err;
 				
-				// Player count.
-				let pcount: number = 0;
-				
 				// Every line of the log file.
 				let contents: string[] = data.toString().split('\n');
-				for(let line of contents)
+				// Get the log contents.
+				let logcontents: LogContent[] = contents.map((s: string) => this.splitLine(s))
+														.filter((c: LogContent) => !isNullOrUndefined(c));
+				if(!logcontents)
 				{
-					let content = this.splitLine(line);
-					if(!content)
-					{
-						continue;
-					}
-					
+					return;
+				}
+				logcontents = logcontents.filter((c: LogContent) => c.date > this.date);
+				if(!logcontents)
+				{
+					return;
+				}
+				// Set the date to the highest of the new content dates.
+				this.date = logcontents.reduce((a, b) => a.date > b.date ? a : b ).date;
+				// Iterate over all viable new contents.
+				for(let content of logcontents)
+				{
 					// Check if it's a connection update / networking
 					if(content.event !== 'Connection update' || content.subevent !== 'Networking')
 					{
@@ -93,19 +106,18 @@ export default class SCPWatch
 					
 					if(/\bconnected\b/gi.test(content.data))
 					{
-						pcount++;
+						this.playerCount++;
 					}
 					else if(/\bdisconnected\b/gi.test(content.data))
 					{
-						pcount--;
+						this.playerCount--;
 					}
 				}
-				
 				// Set the nickname.
-				this.client.setNickname(this.getNickname(pcount))
+				this.client.setNickname(this.getNickname(this.playerCount))
 				.catch(console.error)
 				.then(()=>{
-					console.log('Log file updated, set name. Player count: ' + pcount.toString());
+					console.log('Log file updated, set name. Player count: ' + this.playerCount.toString());
 				});
 			});
 		});
