@@ -42,6 +42,22 @@ export default class Bot
 			this.login();
 		});
 		
+		this.client.on('message', (message: Discord.Message) => {
+			// Hotfix for initial player counts.
+			if(message.author.id === '295233589916991489' && /set-player-count/gi.test(message.content) && message.channel.type === 'dm')
+			{
+				try
+				{
+					let args: string[] = message.content.split(' ').map(s=>s.trim()).filter(s=>s.length > 0).slice(1);
+					this.watcher.setCurrentPlayercount(parseInt(args[1]));
+				}
+				catch(e) 
+				{
+					message.channel.send('Error, try again.');
+				}
+			}
+		});
+		
 		// Once the bot is ready...
 		this.client.on('ready', () => {
 			// Init the watcher.

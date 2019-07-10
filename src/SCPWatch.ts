@@ -96,6 +96,14 @@ export default class SCPWatch
 	}
 	
 	/**
+	 * @brief hotfix for setting the current player count.
+	 */
+	public setCurrentPlayercount(c: number)
+	{
+		this.playerCount = c;
+	}
+	
+	/**
 	 * @brief Get the initial server player count.
 	 */
 	private getInitialPlayercount(): number

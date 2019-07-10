@@ -6,7 +6,7 @@ INCLUDE = config.json LICENSE.md
 all: zip
 
 zip: move dist
-	cd dist/ && zip -r Bot.zip .
+	cd dist/ && zip -r Display-Bot.zip .
 
 dist: dist/bot.exe
 
